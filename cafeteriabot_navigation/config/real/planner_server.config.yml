@@ -1,0 +1,65 @@
+planner_server_node:
+  ros__parameters:
+    expected_planner_frequency: 1.0
+    use_sim_time: False
+    planner_plugins: ["GridBased"]
+
+    GridBased:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.5
+      use_astar: False
+      allow_unknown: True
+
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      footprint_padding: 0.03
+      update_frequency: 1.0
+      publish_frequency: 1.0
+      global_frame: "map"
+      robot_base_frame: "cleaner_2/base_link"
+      use_sim_time: False
+      footprint: "[[-0.25, -0.25], [-0.25, 0.25], [0.25, 0.25], [0.25, -0.25]]"
+      resolution: 0.01
+      
+      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      filters: ["keepout_filter"]
+      
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        observation_sources: "scan"
+        footprint_clearing_enabled: True
+        combination_method: 1
+        scan:
+          topic: "/scan"
+          obstacle_max_range: 2.5
+          obstacle_min_range: 0.5
+          raytrace_max_range: 3.0
+          raytrace_min_range: 0.5
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          inf_is_valid: False
+      
+      static_layer:
+        plugin: "nav2_costmap_2d::StaticLayer"
+        map_subscribe_transient_local: True
+        enabled: True
+        subscribe_to_updates: True
+        transform_tolerance: 0.1
+      
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        enabled: True
+        inflation_radius: 0.25
+        cost_scaling_factor: 2.0
+        inflate_unknown: False
+        inflate_around_unknown: True
+      
+      keepout_filter:
+        plugin: "nav2_costmap_2d::KeepoutFilter"
+        enabled: True
+        filter_info_topic: "/costmap_filter_info"
+      
+      always_send_full_costmap: True
