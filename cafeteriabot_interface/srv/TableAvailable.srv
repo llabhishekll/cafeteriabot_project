@@ -1,0 +1,6 @@
+# request
+int64 duration
+---
+# response
+bool success
+string message

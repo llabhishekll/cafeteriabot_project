@@ -1,0 +1,9 @@
+int32 stage
+# status codes:
+# 1 - Active
+# 2 - Canceled
+# 3 - Aborted
+# 4 - Completed
+int32 status
+bool success
+string message
