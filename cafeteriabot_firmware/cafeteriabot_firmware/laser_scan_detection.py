@@ -8,12 +8,13 @@ from rclpy.node import Node
 from rclpy.clock import ROSClock
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
+from tf2_ros import TransformListener, Buffer
 
 from builtin_interfaces.msg import Duration
 from geometry_msgs.msg import Point, PoseArray, Quaternion, Vector3
 from rcl_interfaces.msg import SetParametersResult
 from std_msgs.msg import ColorRGBA
-from visualization_msgs.msg import Marker
+from visualization_msgs.msg import Marker, MarkerArray
 
 # custom interface
 from cafeteriabot_interface.msg import TableGeometry
@@ -24,6 +25,9 @@ class LaserScanDetectionNode(Node):
     def __init__(self):
         super().__init__("laser_scan_detection_node")
         # member variables
+        self.px = None
+        self.py = None
+        self.yaw = None
         self.centroids = None
         self.centroids_distance = {}
         self.centroids_angle = {}
@@ -35,6 +39,7 @@ class LaserScanDetectionNode(Node):
 
         # node parameters
         self.f_ref = self.declare_parameter("f_ref", "map").value
+        self.t_ref = self.declare_parameter("t_ref", "robot_front_laser_base_link").value
         self.publish_rate = self.declare_parameter("publish_rate", 2.0).value
         self.min_distance = self.declare_parameter("min_distance", 0.5).value
         self.max_distance = self.declare_parameter("max_distance", 1.0).value
@@ -42,8 +47,13 @@ class LaserScanDetectionNode(Node):
         self.marker_duration = self.declare_parameter("marker_duration", 1).value
         self.stale_duration = self.declare_parameter("stale_duration", 5).value
 
+        # transformation objects
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
         # callback groups
         self.callback_g1 = MutuallyExclusiveCallbackGroup()
+        self.callback_g2 = MutuallyExclusiveCallbackGroup()
 
         # ros objects
         self.subscriber_centroid = self.create_subscription(
@@ -55,14 +65,20 @@ class LaserScanDetectionNode(Node):
         self.publisher_marker = self.create_publisher(
             Marker, "/visualization_marker", 10
         )
+        self.publisher_array = self.create_publisher(
+            MarkerArray, "/visualization_marker_array", 10
+        )
         self.server_table = self.create_service(
             TableAvailable, "/is_available", self.service_availability_callback,
         )
         self.timer_detection = self.create_timer(
-            self.publish_rate, self.timer_detection_callback, callback_group=self.callback_g1,
+            self.publish_rate, self.timer_detection_callback, callback_group=self.callback_g2,
         )
         self.timer_publisher = self.create_timer(
-            self.publish_rate, self.timer_publisher_callback, callback_group=self.callback_g1,
+            self.publish_rate, self.timer_publisher_callback, callback_group=self.callback_g2,
+        )
+        self.timer_transformation = self.create_timer(
+            0.2, self.timer_transformation_callback, callback_group=self.callback_g1,
         )
 
         # parameter handler
@@ -78,6 +94,30 @@ class LaserScanDetectionNode(Node):
             else:
                 self.get_logger().warn(f"Attempting to set an unknown parameter '{param.name}'")
         return SetParametersResult(successful=True)
+
+    def timer_transformation_callback(self):
+        try:
+            # wait for the transformation to be available
+            transform = self.tf_buffer.lookup_transform(self.f_ref, self.t_ref, rclpy.time.Time())
+
+            # extract position
+            translation = transform.transform.translation
+            self.px = translation.x
+            self.py = translation.y
+
+            # extract orientation
+            orientation = transform.transform.rotation
+            x = orientation.x
+            y = orientation.y
+            z = orientation.z
+            w = orientation.w
+            self.yaw = math.atan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z))
+
+        except Exception as e:
+            self.px, self.py, self.yaw = None, None, None
+            self.get_logger().warn(
+                f"Could not transform from '{self.f_ref}' to '{self.t_ref}'", skip_first=True, throttle_duration_sec=5
+            )
 
     def subscriber_centroid_callback(self, message):
         # update the last_centroid_update timestamp to the current time
@@ -148,6 +188,7 @@ class LaserScanDetectionNode(Node):
 
             midpoints = [Point(x=x, y=y, z=1.0) for x, y in self.midpoints]
             self.publish_points_marker("table_midpoints", midpoints, (0.0, 0.0, 1.0))
+            self.publish_text_marker("table_midpoints", midpoints, (0.0, 0.0, 1.0))
 
             # publish table to topic
             self.publish_table()
@@ -301,8 +342,7 @@ class LaserScanDetectionNode(Node):
             cy = round((hypotenuse_points[0][1] + hypotenuse_points[1][1]) / 2, 2)
 
             # sort points by angle of each point from centroid
-            angles = [math.atan2(point[1] - cy, point[0] - cx) for point in polygon_points]
-            sorted_points = [point for _, point in sorted(zip(angles, polygon_points))]
+            sorted_points = self.sort_points_clockwise(polygon_points, cx, cy)
 
             # calculate midpoints of all edges except hypotenuse
             midpoints = []
@@ -320,8 +360,7 @@ class LaserScanDetectionNode(Node):
             cy = round(sum(point[1] for point in polygon_points) / num_points, 2)
 
             # sort points by angle of each point from centroid
-            angles = [math.atan2(point[1] - cy, point[0] - cx) for point in polygon_points]
-            sorted_points = [point for _, point in sorted(zip(angles, polygon_points))]
+            sorted_points = self.sort_points_clockwise(polygon_points, cx, cy)
 
             # calculate midpoints of all edges
             midpoints = []
@@ -334,8 +373,24 @@ class LaserScanDetectionNode(Node):
         else:
             self.get_logger().error(f"Reached unknown state for centroid calculation {shape} {num_points}")
 
+        # sort the midpoint
+        sorted_midpoints = self.sort_points_clockwise(midpoints, cx, cy)
+
         # return polygon centroid and midpoints
-        return sorted_points, midpoints, (cx, cy)
+        return sorted_points, sorted_midpoints, (cx, cy)
+
+    def sort_points_clockwise(self, points, cx, cy):
+        # find the closest point to (px, py) and its angle to centroid
+        closest_point = min(points, key=lambda point: self.calculate_distance(point, (self.px, self.py)))
+        closest_angle = math.atan2(closest_point[1] - cy, closest_point[0] - cx)
+
+        # calculate all the angles relative to the centroid
+        angles = [math.atan2(point[1] - cy, point[0] - cx) for point in points]
+        adjusted_angles = [(closest_angle - angle) % (2 * math.pi) for angle in angles]
+
+        # sort points based on the adjusted angles and return
+        sorted_points = [point for _, point in sorted(zip(adjusted_angles, points))]
+        return sorted_points
 
     def calculate_distance(self, point1, point2):
         x1, y1 = point1
@@ -436,15 +491,46 @@ class LaserScanDetectionNode(Node):
         # publish marker
         self.publisher_marker.publish(marker)
 
+    def publish_text_marker(self, name, points, cmap):
+        # define marker array
+        marker_array = MarkerArray()
+
+        for index, point in enumerate(points):
+            # generate base marker
+            marker = self.create_basic_marker(name, Marker.TEXT_VIEW_FACING)
+            marker.id = index
+
+            # visual properties
+            marker.scale = Vector3(x=0.1, y=0.1, z=0.1)
+            marker.color = ColorRGBA(a=1.0, r=cmap[0], g=cmap[1], b=cmap[2])
+
+            # position and orientation
+            marker.pose.position = point
+            marker.pose.orientation = Quaternion(w=1.0)
+            marker.text = f"{index + 1}"
+
+            # add marker to list
+            marker_array.markers.append(marker)
+
+        # publish marker
+        self.publisher_array.publish(marker_array)
+
     def publish_delete_all_marker(self):
+        # define marker array
+        marker_array = MarkerArray()
+
         # marker header definition
         marker = Marker()
         marker.header.frame_id = self.f_ref
         marker.header.stamp = self.get_clock().now().to_msg()
         marker.action = Marker.DELETEALL
 
+        # add marker to list
+        marker_array.markers.append(marker)
+
         # publish marker
         self.publisher_marker.publish(marker)
+        self.publisher_array.publish(marker_array)
 
 
 def main(args=None):
