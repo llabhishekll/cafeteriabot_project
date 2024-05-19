@@ -33,6 +33,7 @@ setup(
             "elevator_management = cafeteriabot_firmware.elevator_management:main",
             "table_docking_service = cafeteriabot_firmware.table_docking_service:main",
             "cafeteriabot_control = cafeteriabot_firmware.cafeteriabot_control:main",
+            "pid_control_visualizer = cafeteriabot_firmware.pid_control_visualizer:main",
         ],
     },
 )

@@ -15,6 +15,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   action/DockToTable.action
   msg/TableGeometry.msg
   msg/DockToTableFeedback.msg
+  msg/PIDValue.msg
   srv/RobotCommand.srv
   srv/TableAvailable.srv
   DEPENDENCIES std_msgs geometry_msgs # CRITICAL
