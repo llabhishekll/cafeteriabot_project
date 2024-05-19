@@ -83,8 +83,8 @@ class CafeteriaRobotControlNode(Node):
         self.client_dock = ActionClient(
             self, DockToTable, "/dock_to_table"
         )
-        self.publisher_marker = self.create_publisher(
-            MarkerArray, "/waypoints_marker", 10
+        self.publisher_array = self.create_publisher(
+            MarkerArray, "/waypoints_marker_array", 10
         )
         self.timer_transformation = self.create_timer(
             0.2, self.timer_transformation_callback, callback_group=self.callback_g1
@@ -636,7 +636,7 @@ class CafeteriaRobotControlNode(Node):
             marker_array.markers.append(marker)
 
         # publish marker
-        self.publisher_marker.publish(marker_array)
+        self.publisher_array.publish(marker_array)
 
     def publish_delete_all_marker(self):
         # define marker array
@@ -652,7 +652,7 @@ class CafeteriaRobotControlNode(Node):
         marker_array.markers.append(marker)
 
         # publish marker
-        self.publisher_marker.publish(marker_array)
+        self.publisher_array.publish(marker_array)
 
 
 def main(args=None):
