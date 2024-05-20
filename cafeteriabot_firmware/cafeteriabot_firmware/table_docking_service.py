@@ -31,6 +31,7 @@ class TableDockingServiceNode(Node):
         self.px = None
         self.py = None
         self.yaw = None
+        self.stage = None
 
         self.goal_handle: ServerGoalHandle = None
         self.abort_handle = False
@@ -61,13 +62,13 @@ class TableDockingServiceNode(Node):
             dt=0.1,
         )
         self.angular_pid = PIDController(
-            Kp=0.50,
+            Kp=0.75,
             Ki=0.005,
             Kd=0.0,
             output_min=-1.0,
             output_max=1.0,
-            integrator_min=-0.5,
-            integrator_max=0.5,
+            integrator_min=-0.25,
+            integrator_max=0.25,
             dt=0.1,
         )
 
@@ -114,7 +115,6 @@ class TableDockingServiceNode(Node):
         self.timer_transformation = self.create_timer(
             0.2, self.timer_transformation_callback, callback_group=self.callback_g1,
         )
-
 
         # parameter handler
         self.add_on_set_parameters_callback(self.on_parameter_changed)
@@ -253,13 +253,15 @@ class TableDockingServiceNode(Node):
 
         # register active goal and verify
         self.goal_handle = goal_handle
+        self.stage = 0
 
         try:
             # check table availability and raise an exception if a table is not available
             if not self.check_table_availability():
                 raise ValueError("No table found in the given time.")
 
-            self.publish_feedback(1, 1, False, "active")
+            self.stage += 1
+            self.publish_feedback(self.stage, 1, False, "active")
 
             # retrieve positions at execution time (t)
             cx, cy = self.center
@@ -281,7 +283,8 @@ class TableDockingServiceNode(Node):
                     f"External Point {valid_index + 1} Pose ({ex:.2f}, {ey:.2f}, Yaw {yaw:.2f}) accepted by planner."
                 )
 
-                self.publish_feedback(2, 1, False, "active")
+                self.stage += 1
+                self.publish_feedback(self.stage, 1, False, "active")
                 break
             else:
                 self.get_logger().info(
@@ -325,25 +328,31 @@ class TableDockingServiceNode(Node):
                     message = "The goal was canceled upon user or system request"
                     return self.process_next_goal_and_result("canceled", message)
 
-                distance, angle, distance_measure, angle_measure = self.calculate_delta(tx, ty)
+                distance_delta, distance_variable, angle_delta, angle_variable = self.calculate_delta(tx, ty)
+                orientation_delta = math.atan2(math.sin(yaw - self.yaw), math.cos(yaw - self.yaw))
 
                 # check if distance is aligned
                 if not distance_aligned:
-                    if not self.is_goal_aligned(distance):
+                    if not self.is_goal_aligned(distance_delta):
                         # move to align distance
-                        linear, angular = self.calculate_velocity(distance, angle, distance_measure, angle_measure)
+                        linear, angular = self.calculate_velocity(
+                            distance_delta, angle_delta, distance_variable, angle_variable
+                        )
                         self.publish_velocity(linear, angular)
                     else:
                         # set flag to true when distance is aligned
                         distance_aligned = True
                 else:
                     # if distance is aligned, align angle
-                    if not self.is_angle_aligned(angle):
+                    if not self.is_angle_aligned(orientation_delta):
                         # rotate to align angle
-                        linear, angular = self.calculate_velocity(distance, angle, distance_measure, angle_measure)
+                        linear, angular = self.calculate_velocity(
+                            distance_delta, orientation_delta, distance_variable, angle_variable
+                        )
                         self.publish_velocity(0.0, angular)
                     else:
-                        self.publish_feedback(index + 3, 1, False, "active")
+                        self.stage += 1
+                        self.publish_feedback(self.stage, 1, False, "active")
                         self.get_logger().info("Navigation to point completed.")
                         break
 
@@ -365,13 +374,13 @@ class TableDockingServiceNode(Node):
         result.success = True
 
         if state == "succeed":
-            self.publish_feedback(0, 4, True, "succeed")
+            self.publish_feedback(self.stage, 4, True, "succeed")
             self.goal_handle.succeed()
         elif state == "canceled":
-            self.publish_feedback(0, 2, True, "canceled")
+            self.publish_feedback(self.stage, 2, True, "canceled")
             self.goal_handle.canceled()
         elif state == "aborted":
-            self.publish_feedback(0, 3, True, "aborted")
+            self.publish_feedback(self.stage, 3, True, "aborted")
             self.goal_handle.abort()
         else:
             self.get_logger().error(f"Unknown state '{state}' provided. No action taken.")
@@ -405,7 +414,7 @@ class TableDockingServiceNode(Node):
         feedback.success = success
         feedback.message = message
 
-        # publish feedback to topic
+        # publish message to topic
         self.publisher_feedback.publish(feedback)
 
     def is_goal_aligned(self, distance):
@@ -436,30 +445,25 @@ class TableDockingServiceNode(Node):
         dy = ty - self.py
 
         # distance and angle measurement
-        distance_measure = math.sqrt(self.px**2 + self.py**2)
-        angle_measure = self.yaw
+        distance_variable = math.sqrt(self.px**2 + self.py**2)
+        angle_variable = self.yaw
 
         # calculate distance and angle
-        distance = math.sqrt(dx**2 + dy**2)
-        angle = math.atan2(dy, dx) - self.yaw
-        angle_prime = math.atan2(math.sin(angle), math.cos(angle))
+        distance_delta = math.sqrt(dx**2 + dy**2)
+        angle_delta = math.atan2(dy, dx) - self.yaw
+        angle_prime = math.atan2(math.sin(angle_delta), math.cos(angle_delta))
 
         # log information and return
         self.get_logger().info(
-            f"Position Update - Δ(x, y): ({dx:.2f}, {dy:.2f}), Distance: {distance:.2f} m, Angle: {angle:.2f} rad.",
+            f"Position Update - Δ(x, y): ({dx:.2f}, {dy:.2f}), Distance: {distance_delta:.2f} m, Angle: {angle_delta:.2f} rad.",
             throttle_duration_sec=5.0,
         )
-        return distance, angle_prime, distance_measure, angle_measure
+        return distance_delta, distance_variable, angle_prime, angle_variable
 
-    def calculate_velocity(self, distance, angle, distance_measure, angle_measure):
+    def calculate_velocity(self, distance_delta, angle_delta, distance_variable, angle_variable):
         # PID : calculate linear and angular velocities
-        linear, lp, li, ld = self.linear_pid.get_total_gain(distance, distance_measure)
-        angular, ap, ai, ad = self.angular_pid.get_total_gain(angle, angle_measure)
-
-        self.get_logger().debug(
-            f"PID - Linear: {linear:.2f} (P: {lp:.2f}, I: {li:.2f}, D: {ld:.2f}), "
-            f"Angular: {angular:.2f} (P: {ap:.2f}, I: {ai:.2f}, D: {ad:.2f})"
-        )
+        linear, _, _, _ = self.linear_pid.get_total_gain(distance_delta, distance_variable)
+        angular, _, _, _ = self.angular_pid.get_total_gain(angle_delta, angle_variable)
 
         # return velocity
         return linear, angular
@@ -477,11 +481,6 @@ class TableDockingServiceNode(Node):
             f" Set Velocity - Linear: {linear:5.2f} m/s, Angular {angular:5.2f} rad/s.", throttle_duration_sec=1.0
         )
         self.publisher_velocity.publish(message)
-
-    def calculate_distance(self, point1, point2):
-        x1, y1 = point1
-        x2, y2 = point2
-        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
     def calculate_external_point(self, px, py, cx, cy, mx, my):
         # calculate direction vector and its magnitude
