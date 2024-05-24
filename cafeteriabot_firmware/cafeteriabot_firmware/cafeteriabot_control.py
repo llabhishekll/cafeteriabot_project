@@ -246,6 +246,7 @@ class CafeteriaRobotControlNode(Node):
 
         # clear any earlier event
         self.cancel_event.clear()
+        self.control_elevator(False)
 
         # set the next state, and indicate no transition
         self.next_state = None
