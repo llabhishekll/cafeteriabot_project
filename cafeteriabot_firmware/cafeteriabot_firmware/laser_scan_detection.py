@@ -198,7 +198,7 @@ class LaserScanDetectionNode(Node):
 
     def timer_detection_callback(self):
         # check if there are enough centroids to form a polygon (at least 3)
-        if not self.centroids or len(self.centroids) < 3:
+        if not (self.centroids and self.px and self.py and self.yaw) or len(self.centroids) < 3:
             self.get_logger().warn(
                 f"Insufficient centroids data expected at least 3, found {len(self.centroids) if self.centroids else 0}.",
                 skip_first=True,
