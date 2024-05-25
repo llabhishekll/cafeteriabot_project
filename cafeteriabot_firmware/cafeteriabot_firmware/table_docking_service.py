@@ -53,8 +53,8 @@ class TableDockingServiceNode(Node):
         # PID controller for linear and angular controls
         self.linear_pid = PIDController(
             Kp=0.25,
-            Ki=0.005,
-            Kd=0.0,
+            Ki=0.01,
+            Kd=0.001,
             output_min=-1.50,
             output_max=1.50,
             integrator_min=-0.25,
@@ -63,8 +63,8 @@ class TableDockingServiceNode(Node):
         )
         self.angular_pid = PIDController(
             Kp=0.75,
-            Ki=0.005,
-            Kd=0.0,
+            Ki=0.01,
+            Kd=0.001,
             output_min=-1.0,
             output_max=1.0,
             integrator_min=-0.25,
@@ -340,6 +340,10 @@ class TableDockingServiceNode(Node):
                         )
                         self.publish_velocity(linear, angular)
                     else:
+                        # move little further
+                        self.publish_velocity(0.25, 0.0)
+                        time.sleep(4)
+
                         # set flag to true when distance is aligned
                         distance_aligned = True
                 else:
@@ -455,15 +459,15 @@ class TableDockingServiceNode(Node):
 
         # log information and return
         self.get_logger().info(
-            f"Position Update - Δ(x, y): ({dx:.2f}, {dy:.2f}), Distance: {distance_delta:.2f} m, Angle: {angle_delta:.2f} rad.",
+            f"Update - Δ(x, y): ({dx:.2f}, {dy:.2f}), Distance: {distance_delta:.2f} m, Angle: {angle_delta:.2f} rad.",
             throttle_duration_sec=5.0,
         )
         return distance_delta, distance_variable, angle_prime, angle_variable
 
     def calculate_velocity(self, distance_delta, angle_delta, distance_variable, angle_variable):
         # PID : calculate linear and angular velocities
-        linear, _, _, _ = self.linear_pid.get_total_gain(distance_delta, distance_variable)
-        angular, _, _, _ = self.angular_pid.get_total_gain(angle_delta, angle_variable)
+        linear = self.linear_pid.get_total_gain(distance_delta, distance_variable)
+        angular = self.angular_pid.get_total_gain(angle_delta, angle_variable)
 
         # return velocity
         return linear, angular
@@ -686,7 +690,7 @@ class PIDController:
         elif output < self.output_min:
             return self.output_min
         else:
-            return output, p, i, d
+            return output
 
 
 def main(args=None):
