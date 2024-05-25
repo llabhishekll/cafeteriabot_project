@@ -23,9 +23,9 @@ class LaserScanFilteringNode(Node):
         self.yaw = None
 
         # node parameters
-        self.distance_threshold = self.declare_parameter("distance_threshold", 2.0).value
         self.f_ref = self.declare_parameter("f_ref", "map").value
         self.t_ref = self.declare_parameter("t_ref", "robot_front_laser_base_link").value
+        self.distance_threshold = self.declare_parameter("distance_threshold", 2.0).value
 
         # node modification
         qos_profile = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)

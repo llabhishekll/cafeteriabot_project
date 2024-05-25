@@ -19,8 +19,8 @@ class PointMarkerAnalysisNode(Node):
         self.map_data = None
 
         # node parameters
-        self.marker_duration = self.declare_parameter("marker_duration", 5).value
         self.f_ref = self.declare_parameter("f_ref", "map").value
+        self.marker_duration = self.declare_parameter("marker_duration", 5).value
 
         # node modification
         qos_profile = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)

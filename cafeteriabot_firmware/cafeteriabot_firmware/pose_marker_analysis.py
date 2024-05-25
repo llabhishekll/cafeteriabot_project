@@ -18,9 +18,9 @@ class PoseMarkerAnalysisNode(Node):
         # member variables
 
         # node parameters
-        self.marker_duration = self.declare_parameter("marker_duration", 5).value
         self.f_ref = self.declare_parameter("f_ref", "map").value
         self.t_ref = self.declare_parameter("t_ref", "robot_base_footprint").value
+        self.marker_duration = self.declare_parameter("marker_duration", 5).value
 
         # transformation objects
         self.tf_buffer = Buffer()
