@@ -1,0 +1,38 @@
+version: "3"
+
+services:
+  navigation:
+    image: "llabhishekll/cafeteriabot_project:ros2-base"
+    command: ["ros2", "launch", "cafeteriabot_navigation", "navigation_server.launch.py"]
+    networks:
+      - default
+    environment:
+      - "ROS_DOMAIN_ID=0"
+      - "RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+    ports:
+      - "7400-8000:7400-8000/udp"
+    tty: true
+  
+  detection:
+    image: "llabhishekll/cafeteriabot_project:ros2-base"
+    command: ["ros2", "launch", "cafeteriabot_firmware", "detection_server.launch.py"]
+    networks:
+      - default
+    environment:
+      - "ROS_DOMAIN_ID=0"
+      - "RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+    tty: true
+  
+  control:
+    image: "llabhishekll/cafeteriabot_project:ros2-base"
+    command: ["ros2", "launch", "cafeteriabot_firmware", "cafeteriabot_control.launch.py"]
+    networks:
+      - default
+    environment:
+      - "ROS_DOMAIN_ID=0"
+      - "RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+    tty: true
+
+networks:
+  default:
+    driver: bridge
