@@ -3,7 +3,7 @@ behavior_tree_node:
     use_sim_time: False
     global_frame: "map"
     robot_base_frame: "cleaner_2/base_link"
-    odom_topic: "/odom"
+    odom_topic: "/cleaner_2/odom"
     bt_loop_duration: 10
     default_server_timeout: 20
     default_nav_to_pose_bt_xml: "behavior_tree.xml"

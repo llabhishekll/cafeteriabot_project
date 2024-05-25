@@ -37,7 +37,7 @@ localization_node:
     z_max: 0.05
     z_rand: 0.5
     z_short: 0.05
-    scan_topic: "/scan"
+    scan_topic: "/cleaner_2/scan"
     map_topic: "/map"
     set_initial_pose: False
     always_reset_initial_pose: False
