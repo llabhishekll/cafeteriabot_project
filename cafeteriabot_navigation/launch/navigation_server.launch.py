@@ -41,7 +41,9 @@ def generate_launch_description():
                 name="static_transform_publisher",
                 namespace="",
                 output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "robot_base_link", "base_link"],
+                arguments=[
+                    "0", "0", "0", "0", "0", "0", "robot_base_link", "base_link"
+                ],
                 condition=IfCondition(LaunchConfiguration('use_sim_time')),
             ),
             Node(
@@ -50,7 +52,13 @@ def generate_launch_description():
                 name="static_transform_publisher",
                 namespace="",
                 output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "cleaner_2/base_link", "base_link"],
+                remappings=[
+                    ("/tf", "/cleaner_2/tf"),
+                    ("/tf_static", "/cleaner_2/tf_static"),
+                ],
+                arguments=[
+                    "0", "0", "0", "0", "0", "0", "cleaner_2/base_link", "base_link"
+                ],
                 condition=UnlessCondition(LaunchConfiguration('use_sim_time')),
             ),
             Node(
@@ -170,9 +178,6 @@ def generate_launch_description():
                 executable="amcl",
                 name="localization_node",
                 output="screen",
-                remappings=[
-                    ("/scan", "/cleaner_2/scan"),
-                ],
                 parameters=[
                     generate_yaml_param(
                         path_root / "config" / "real" / "localization_server.config.yml",
@@ -197,9 +202,6 @@ def generate_launch_description():
                 executable="planner_server",
                 name="planner_server_node",
                 output="screen",
-                remappings=[
-                    ("/scan", "/cleaner_2/scan"),
-                ],
                 parameters=[
                     generate_yaml_param(
                         path_root / "config" / "real" / "planner_server.config.yml",
@@ -213,7 +215,7 @@ def generate_launch_description():
                 name="controller_server_node",
                 output="screen",
                 remappings=[
-                    ("/cmd_vel", "diffbot_base_controller/cmd_vel_unstamped"),
+                    ("/cmd_vel", "/diffbot_base_controller/cmd_vel_unstamped"),
                 ],
                 parameters=[
                     generate_yaml_param(
@@ -228,7 +230,6 @@ def generate_launch_description():
                 name="controller_server_node",
                 output="screen",
                 remappings=[
-                    ("/odom", "/cleaner_2/odom"),
                     ("/cmd_vel", "/cleaner_2/cmd_vel"),
                 ],
                 parameters=[
@@ -243,6 +244,9 @@ def generate_launch_description():
                 executable="behavior_server",
                 name="behavior_server_node",
                 output="screen",
+                remappings=[
+                    ("/cmd_vel", "/diffbot_base_controller/cmd_vel_unstamped"),
+                ],
                 parameters=[
                     generate_yaml_param(
                         path_root / "config" / "sim" / "behavior_server.config.yml",
@@ -255,6 +259,9 @@ def generate_launch_description():
                 executable="behavior_server",
                 name="behavior_server_node",
                 output="screen",
+                remappings=[
+                    ("/cmd_vel", "/cleaner_2/cmd_vel"),
+                ],
                 parameters=[
                     generate_yaml_param(
                         path_root / "config" / "real" / "behavior_server.config.yml",
@@ -285,9 +292,6 @@ def generate_launch_description():
                 executable="bt_navigator",
                 name="bt_navigator_node",
                 output="screen",
-                remappings=[
-                    ("/odom", "/cleaner_2/odom"),
-                ],
                 parameters=[
                     generate_yaml_param(
                         path_root / "config" / "real" / "behavior_tree.config.yml",

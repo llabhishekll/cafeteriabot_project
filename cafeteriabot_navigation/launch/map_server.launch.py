@@ -35,7 +35,25 @@ def generate_launch_description():
                 name="static_transform_publisher",
                 namespace="",
                 output="screen",
-                arguments=["0", "0", "0", "0", "0", "0", "map", "odom"],
+                arguments=[
+                    "0", "0", "0", "0", "0", "0", "map", "odom"
+                ],
+                condition=IfCondition(LaunchConfiguration('use_sim_time')),
+            ),
+            Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                name="static_transform_publisher",
+                namespace="",
+                output="screen",
+                remappings=[
+                    ("/tf", "/cleaner_2/tf"),
+                    ("/tf_static", "/cleaner_2/tf_static"),
+                ],
+                arguments=[
+                    "0", "0", "0", "0", "0", "0", "map", "cleaner_2/odom"
+                ],
+                condition=UnlessCondition(LaunchConfiguration('use_sim_time')),
             ),
             Node(
                 package="nav2_map_server",
