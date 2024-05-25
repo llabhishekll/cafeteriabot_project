@@ -3,6 +3,7 @@ from pathlib import Path
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, LogInfo
+from launch.actions import TimerAction
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -95,23 +96,51 @@ def generate_launch_description():
                 ],
                 condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
             ),
-            Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                name="static_transform_publisher",
-                namespace="",
-                output="screen",
-                arguments=[
-                    "0", "0", "0.557", "0", "-0.027", "0", "base_footprint", "laser_sensor_link"
-                ],
-                condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
+            TimerAction(
+                period=2.0,
+                actions=[
+                    Node(
+                        package="tf2_ros",
+                        executable="static_transform_publisher",
+                        name="static_transform_publisher",
+                        namespace="",
+                        output="screen",
+                        remappings=[
+                            ("/tf", "/cleaner_2/tf"),
+                            ("/tf_static", "/cleaner_2/tf_static"),
+                        ],
+                        arguments=[
+                            "0.075", "0", "0.150", "0", "0", "0", "base_link", "cleaner_2/laser_sensor_link"
+                        ],
+                        condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
+                    ),
+                    Node(
+                        package="tf2_ros",
+                        executable="static_transform_publisher",
+                        name="static_transform_publisher",
+                        namespace="",
+                        output="screen",
+                        remappings=[
+                            ("/tf", "/cleaner_2/tf"),
+                            ("/tf_static", "/cleaner_2/tf_static"),
+                        ],
+                        arguments=[
+                            "0", "0", "0", "0", "0", "0", "map", "cleaner_2/map"
+                        ],
+                        condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
+                    ),
+                ]
             ),
             Node(
                 package="rviz2",
                 executable="rviz2",
                 name="rviz_node",
                 output="screen",
-                parameters=[{"use_sim_time": use_sim_time}],
+                parameters=[
+                    {
+                        "use_sim_time": use_sim_time
+                    }
+                ],
                 arguments=[
                     "-d", path_rviz.as_posix(),
                 ],
