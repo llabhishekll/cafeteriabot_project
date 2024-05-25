@@ -6,7 +6,7 @@ from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 
 from std_srvs.srv import SetBool
-from std_msgs.msg import Empty, String
+from std_msgs.msg import String
 from geometry_msgs.msg import Point32, Polygon
 from rcl_interfaces.msg import SetParametersResult
 
@@ -32,12 +32,20 @@ class ElevatorManagementNode(Node):
         self.publisher_lfootprint = self.create_publisher(
             Polygon, "/local_costmap/footprint", 10
         )
-        self.publisher_elevator_up = self.create_publisher(
-            String, "/elevator_up", 10
-        )
-        self.publisher_elevator_down = self.create_publisher(
-            String, "/elevator_down", 10
-        )
+        if self.use_sim_time:
+            self.publisher_elevator_up = self.create_publisher(
+                String, "/elevator_up", 10
+            )
+            self.publisher_elevator_down = self.create_publisher(
+                String, "/elevator_down", 10
+            )
+        else:
+            self.publisher_elevator_up = self.create_publisher(
+                String, "/set_elevator", 10
+            )
+            self.publisher_elevator_down = self.create_publisher(
+                String, "/set_elevator", 10
+            )
 
         # parameter handler
         self.add_on_set_parameters_callback(self.on_parameter_changed)
@@ -57,16 +65,20 @@ class ElevatorManagementNode(Node):
         # determine action based on the request
         action = "up" if request.data else "down"
 
+        # define elevator request
+        message = String()
+        message.data = action
+
         # elevator up
         if action == "up":
-            self.publisher_elevator_up.publish(String())
+            self.publisher_elevator_up.publish(message)
             # calculate footprint for cart
             footprint = self.polygon_message_rectangle(radius=self.table_radius)
             # response message
             message = f"Elevator moved up, earlier {self.previous_action}"
         # elevator down
         else:
-            self.publisher_elevator_down.publish(String())
+            self.publisher_elevator_down.publish(message)
             # calculate footprint for robot
             footprint = self.polygon_message_rectangle(radius=self.robot_radius)
             # response message
