@@ -35,11 +35,48 @@ def generate_launch_description():
                         "f_ref": "map",
                         "t_ref": "robot_base_footprint",
                         "retry_duration": 5,
+                        "distance_away": 0.65,
+                        "step_size": 0.5,
+                        "node_rate": 10.0,
+                        "goal_tolerance": 0.15,
+                        "yaw_tolerance": 0.15,
+                    }
+                ],
+                condition=IfCondition(LaunchConfiguration("use_sim_time")),
+            ),
+            Node(
+                package="cafeteriabot_firmware",
+                executable="table_docking_service",
+                name="table_docking_service_node",
+                output="screen",
+                remappings=[
+                    ("/cmd_vel", "/cleaner_2/cmd_vel"),
+                ],
+                parameters=[
+                    {
+                        "use_sim_time": use_sim_time,
+                        "f_ref": "map",
+                        "t_ref": "cleaner_2/base_link",
+                        "retry_duration": 5,
                         "distance_away": 0.5,
                         "step_size": 0.5,
                         "node_rate": 10.0,
                         "goal_tolerance": 0.1,
                         "yaw_tolerance": 0.1,
+                    }
+                ],
+                condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
+            ),
+            Node(
+                package="cafeteriabot_firmware",
+                executable="elevator_management",
+                name="elevator_management_node",
+                output="screen",
+                parameters=[
+                    {
+                        "use_sim_time": use_sim_time,
+                        "robot_radius": 0.22,
+                        "table_radius": 0.35
                     }
                 ],
                 condition=IfCondition(LaunchConfiguration("use_sim_time")),
@@ -56,7 +93,7 @@ def generate_launch_description():
                         "table_radius": 0.35
                     }
                 ],
-                condition=IfCondition(LaunchConfiguration("use_sim_time")),
+                condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
             ),
             Node(
                 package="cafeteriabot_firmware",
@@ -80,6 +117,29 @@ def generate_launch_description():
                     }
                 ],
                 condition=IfCondition(LaunchConfiguration("use_sim_time")),
+            ),
+            Node(
+                package="cafeteriabot_firmware",
+                executable="cafeteriabot_control",
+                name="cafeteria_robot_control_node",
+                output="screen",
+                parameters=[
+                    {
+                        "use_sim_time": use_sim_time,
+                        "f_ref": "map",
+                        "t_ref": "cleaner_2/base_link",
+                        "yaml_filename": PathJoinSubstitution(
+                            [
+                                (path_root / "config").as_posix(),
+                                "waypoints.yaml"
+                            ]
+                        ),
+                        "retry_duration": 5,
+                        "node_rate": 10.0,
+                        "marker_duration": 0,
+                    }
+                ],
+                condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
             ),
         ]
     )

@@ -40,12 +40,30 @@ def generate_launch_description():
                 ],
                 parameters=[
                     {
-                        "distance_threshold": 2.2,
                         "f_ref": "map",
-                        "t_ref": "robot_front_laser_base_link"
+                        "t_ref": "robot_front_laser_base_link",
+                        "distance_threshold": 2.2,
                     }
                 ],
                 condition=IfCondition(LaunchConfiguration("use_sim_time")),
+            ),
+            Node(
+                package="cafeteriabot_firmware",
+                executable="laser_scan_filtering",
+                name="filtering01_node",
+                output="screen",
+                remappings=[
+                    ("/map", "/keepout_filter_mask"),
+                    ("/scan", "/cleaner_2/scan"),
+                ],
+                parameters=[
+                    {
+                        "f_ref": "map",
+                        "t_ref": "cleaner_2/laser_sensor_link",
+                        "distance_threshold": 2.2,
+                    }
+                ],
+                condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
             ),
             Node(
                 package="cafeteriabot_firmware",
@@ -67,21 +85,59 @@ def generate_launch_description():
             ),
             Node(
                 package="cafeteriabot_firmware",
+                executable="laser_scan_clustering",
+                name="clustering_node",
+                output="screen",
+                parameters=[
+                    {
+                        "f_ref": "map",
+                        "t_ref": "cleaner_2/laser_sensor_link",
+                        "publish_rate": 1.0,
+                        "distance_threshold": 0.1,
+                        "min_points": 10,
+                        "max_points": 120,
+                        "stale_duration": 1,
+                    }
+                ],
+                condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
+            ),
+            Node(
+                package="cafeteriabot_firmware",
                 executable="laser_scan_detection",
                 name="detection01_node",
                 output="screen",
                 parameters=[
                     {
                         "f_ref": "map",
+                        "t_ref": "robot_front_laser_base_link",
                         "publish_rate": 1.0,
-                        "min_distance": 0.45,
-                        "max_distance": 0.75,
+                        "min_distance": 0.60,
+                        "max_distance": 0.80,
                         "angle_tolerance": 5,
                         "marker_duration": 5,
                         "stale_duration": 5,
                     }
                 ],
                 condition=IfCondition(LaunchConfiguration("use_sim_time")),
+            ),
+            Node(
+                package="cafeteriabot_firmware",
+                executable="laser_scan_detection",
+                name="detection01_node",
+                output="screen",
+                parameters=[
+                    {
+                        "f_ref": "map",
+                        "t_ref": "cleaner_2/laser_sensor_link",
+                        "publish_rate": 1.0,
+                        "min_distance": 0.50,
+                        "max_distance": 0.75,
+                        "angle_tolerance": 5,
+                        "marker_duration": 5,
+                        "stale_duration": 5,
+                    }
+                ],
+                condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
             ),
         ]
     )
