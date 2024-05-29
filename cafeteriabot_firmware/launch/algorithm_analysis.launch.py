@@ -33,7 +33,7 @@ def generate_launch_description():
             Node(
                 package="cafeteriabot_firmware",
                 executable="point_marker_analysis",
-                name="point_marker_analysis_node",
+                name="point_analysis_node",
                 output="screen",
                 parameters=[
                     {
@@ -46,7 +46,7 @@ def generate_launch_description():
             Node(
                 package="cafeteriabot_firmware",
                 executable="point_marker_analysis",
-                name="point_marker_analysis_node",
+                name="point_analysis_node",
                 output="screen",
                 parameters=[
                     {
@@ -59,7 +59,7 @@ def generate_launch_description():
             Node(
                 package="cafeteriabot_firmware",
                 executable="pose_marker_analysis",
-                name="pose_marker_analysis_node",
+                name="pose_analysis_node",
                 output="screen",
                 parameters=[
                     {
@@ -73,7 +73,7 @@ def generate_launch_description():
             Node(
                 package="cafeteriabot_firmware",
                 executable="pose_marker_analysis",
-                name="pose_marker_analysis_node",
+                name="pose_analysis_node",
                 output="screen",
                 parameters=[
                     {
@@ -94,11 +94,13 @@ def generate_launch_description():
                 ],
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "debug": True,
-                        "distance_threshold": 2.2,
                         "f_ref": "map",
                         "t_ref": "robot_front_laser_base_link",
                         "marker_duration": 5,
+                        "min_distance": 0.2,
+                        "max_distance": 2.2,
                     }
                 ],
                 condition=IfCondition(LaunchConfiguration("use_sim_time")),
@@ -114,11 +116,13 @@ def generate_launch_description():
                 ],
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "debug": True,
-                        "distance_threshold": 2.2,
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
                         "marker_duration": 5,
+                        "min_distance": 0.2,
+                        "max_distance": 2.2,
                     }
                 ],
                 condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
@@ -133,9 +137,11 @@ def generate_launch_description():
                 ],
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "f_ref": "map",
                         "t_ref": "robot_front_laser_base_link",
-                        "distance_threshold": 2.2,
+                        "min_distance": 0.2,
+                        "max_distance": 2.2,
                     }
                 ],
                 condition=IfCondition(LaunchConfiguration("use_sim_time")),
@@ -151,9 +157,11 @@ def generate_launch_description():
                 ],
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
-                        "distance_threshold": 2.2,
+                        "min_distance": 0.2,
+                        "max_distance": 2.2,
                     }
                 ],
                 condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
@@ -165,6 +173,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "debug": True,
                         "f_ref": "map",
                         "t_ref": "robot_front_laser_base_link",
@@ -183,12 +192,13 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "debug": True,
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
                         "distance_threshold": 0.1,
-                        "min_points": 10,
-                        "max_points": 120,
+                        "min_points": 5,
+                        "max_points": 80,
                         "marker_duration": 5,
                     }
                 ],

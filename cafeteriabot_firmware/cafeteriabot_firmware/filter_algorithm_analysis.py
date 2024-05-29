@@ -27,14 +27,17 @@ class AnalyzeFilterAlgorithmNode(Node):
         self.yaw = None
 
         # node parameters
+        self.use_sim_time = self.get_parameter("use_sim_time").value
         self.debug = self.declare_parameter("debug", True).value
         self.f_ref = self.declare_parameter("f_ref", "map").value
         self.t_ref = self.declare_parameter("t_ref", "robot_front_laser_base_link").value
         self.marker_duration = self.declare_parameter("marker_duration", 5).value
-        self.distance_threshold = self.declare_parameter("distance_threshold", 1.9).value
+        self.min_distance = self.declare_parameter("min_distance", 0.1).value
+        self.max_distance = self.declare_parameter("max_distance", 2.0).value
 
         # node modification
         qos_profile = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.orientation_factor = -1 if self.use_sim_time else 1
 
         # transformation objects
         self.tf_buffer = Buffer()
@@ -112,11 +115,11 @@ class AnalyzeFilterAlgorithmNode(Node):
 
         for i, distance in enumerate(self.scan_data.ranges):
             # check if distance is within the threshold value
-            if distance <= self.distance_threshold:
+            if self.min_distance <= distance <= self.max_distance:
                 # convert polar to (x, y) coordinates
-                angle = self.scan_data.angle_min + i * self.scan_data.angle_increment
-                x = distance * math.cos(-angle)
-                y = distance * math.sin(-angle)
+                angle = self.orientation_factor * (self.scan_data.angle_min + i * self.scan_data.angle_increment)
+                x = distance * math.cos(angle)
+                y = distance * math.sin(angle)
 
                 # convert (x, y) point to map coordinates frame
                 px = round(self.px + (math.cos(self.yaw) * x - math.sin(self.yaw) * y), 2)
@@ -131,16 +134,27 @@ class AnalyzeFilterAlgorithmNode(Node):
             self.get_logger().info(f"Publishing {ptype} marker: {len(point_list)}")
             self.publish_points_marker(f"points_{ptype}", point_list, colors[ptype])
 
-        # calculate points of circle
+        # calculate points of min circle
         points_boundary, num_points = [], 100
         for i in range(num_points + 1):
             angle = 2 * math.pi * i / num_points
-            cx = self.px + self.distance_threshold * math.cos(angle)
-            cy = self.py + self.distance_threshold * math.sin(angle)
+            cx = self.px + self.min_distance * math.cos(angle)
+            cy = self.py + self.min_distance * math.sin(angle)
             points_boundary.append(Point(x=cx, y=cy, z=0.0))
 
         # publish scan boundary
-        self.publish_line_marker("points_boundary", points_boundary, (1.0, 0.0, 1.0))
+        self.publish_line_marker("points_boundary_min", points_boundary, (1.0, 0.0, 1.0))
+
+        # calculate points of max circle
+        points_boundary, num_points = [], 100
+        for i in range(num_points + 1):
+            angle = 2 * math.pi * i / num_points
+            cx = self.px + self.max_distance * math.cos(angle)
+            cy = self.py + self.max_distance * math.sin(angle)
+            points_boundary.append(Point(x=cx, y=cy, z=0.0))
+
+        # publish scan boundary
+        self.publish_line_marker("points_boundary_max", points_boundary, (1.0, 0.0, 1.0))
 
         if not self.debug:
             self.destroy_timer(self.timer_analyse)

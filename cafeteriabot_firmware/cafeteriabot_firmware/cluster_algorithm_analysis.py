@@ -24,6 +24,7 @@ class ClusterAlgorithmAnalysisNode(Node):
         self.yaw = None
 
         # node parameters
+        self.use_sim_time = self.get_parameter("use_sim_time").value
         self.debug = self.declare_parameter("debug", True).value
         self.f_ref = self.declare_parameter("f_ref", "map").value
         self.t_ref = self.declare_parameter("t_ref", "robot_front_laser_base_link").value
@@ -31,6 +32,9 @@ class ClusterAlgorithmAnalysisNode(Node):
         self.min_points = self.declare_parameter("min_points", 10).value
         self.max_points = self.declare_parameter("max_points", 50).value
         self.marker_duration = self.declare_parameter("marker_duration", 5).value
+
+        # node modification
+        self.orientation_factor = -1 if self.use_sim_time else 1
 
         # transformation objects
         self.tf_buffer = Buffer()
@@ -104,9 +108,9 @@ class ClusterAlgorithmAnalysisNode(Node):
                 continue
 
             # convert polar to (x, y) coordinates
-            angle = self.scan_data.angle_min + i * self.scan_data.angle_increment
-            x = distance * math.cos(-angle)
-            y = distance * math.sin(-angle)
+            angle = self.orientation_factor * (self.scan_data.angle_min + i * self.scan_data.angle_increment)
+            x = distance * math.cos(angle)
+            y = distance * math.sin(angle)
 
             # convert (x, y) point to map coordinates frame
             px = round(self.px + (math.cos(self.yaw) * x - math.sin(self.yaw) * y), 2)

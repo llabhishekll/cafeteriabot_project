@@ -23,12 +23,15 @@ class LaserScanFilteringNode(Node):
         self.yaw = None
 
         # node parameters
+        self.use_sim_time = self.get_parameter("use_sim_time").value
         self.f_ref = self.declare_parameter("f_ref", "map").value
         self.t_ref = self.declare_parameter("t_ref", "robot_front_laser_base_link").value
-        self.distance_threshold = self.declare_parameter("distance_threshold", 2.0).value
+        self.min_distance = self.declare_parameter("min_distance", 0.1).value
+        self.max_distance = self.declare_parameter("max_distance", 2.0).value
 
         # node modification
         qos_profile = QoSProfile(depth=10, durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        self.orientation_factor = -1 if self.use_sim_time else 1
 
         # transformation objects
         self.tf_buffer = Buffer()
@@ -104,11 +107,11 @@ class LaserScanFilteringNode(Node):
 
         for i, distance in enumerate(message.ranges):
             # check if distance is within the threshold value
-            if distance <= self.distance_threshold:
+            if self.min_distance <= distance <= self.max_distance:
                 # convert polar to (x, y) coordinates
-                angle = message.angle_min + i * message.angle_increment
-                x = distance * math.cos(-angle)
-                y = distance * math.sin(-angle)
+                angle = self.orientation_factor * (message.angle_min + i * message.angle_increment)
+                x = distance * math.cos(angle)
+                y = distance * math.sin(angle)
 
                 # convert (x, y) point to map coordinates frame
                 px = round(self.px + (math.cos(self.yaw) * x - math.sin(self.yaw) * y), 2)
