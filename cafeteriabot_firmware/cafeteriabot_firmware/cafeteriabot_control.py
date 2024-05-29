@@ -266,7 +266,7 @@ class CafeteriaRobotControlNode(Node):
             self.navigator.goToPose(next_waypoint)
 
             # sleep for few sec before looping
-            time.sleep(2)
+            time.sleep(4)
 
             while not self.navigator.isTaskComplete():
                 if self.evaluate_navigation_feedback():
@@ -290,11 +290,19 @@ class CafeteriaRobotControlNode(Node):
         if not self.move_robot_under(True):
             return self.request_transition("state_halt")
 
-        if self.previous_state != "state_patrol":
-            return self.request_transition("state_halt")
-
         if not self.control_elevator(True):
             return self.request_transition("state_halt")
+
+        # move robot back
+        self.navigator.backup(backup_dist=0.45, backup_speed=0.10, time_allowance=10)
+
+        while not self.navigator.isTaskComplete():
+            # cancellation event has been triggered
+            if self.check_cancel_event():
+                return
+
+            # sleep for few sec before rechecking
+            time.sleep(1)
 
         # update waypoints for path to follow
         self.waypoints = self.get_patrol_points("home_to_drop")
@@ -312,7 +320,7 @@ class CafeteriaRobotControlNode(Node):
             self.navigator.goToPose(next_waypoint)
 
             # sleep for few sec before looping
-            time.sleep(2)
+            time.sleep(4)
 
             while not self.navigator.isTaskComplete():
                 if self.evaluate_navigation_feedback():
@@ -338,7 +346,8 @@ class CafeteriaRobotControlNode(Node):
         if not self.control_elevator(False):
             return self.request_transition("state_halt")
 
-        self.navigator.backup(backup_dist=0.45, backup_speed=0.25, time_allowance=20)
+        # move robot back
+        self.navigator.backup(backup_dist=0.45, backup_speed=0.10, time_allowance=10)
 
         while not self.navigator.isTaskComplete():
             # cancellation event has been triggered
