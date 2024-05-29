@@ -312,8 +312,18 @@ class TableDockingServiceNode(Node):
         self.get_logger().info("Table available, beginning goal execution process.")
 
         # iterate over each target point in path_points
-        for index, (tx, ty) in enumerate(path_points):
-            self.get_logger().info(f"Starting navigation to target point {index+1}: ({tx:.2f}, {ty:.2f})")
+        for index in range(3):
+            # update path points
+            path_points[1] = self.midpoints[valid_index]
+            path_points[2] = self.center
+            self.publish_complete_path(path_points)
+
+            # fetch target point
+            tx, ty = path_points[index]
+            orientation = yaw
+            self.get_logger().info(
+                f"Starting navigation to target point {index+1}: ({tx:.2f}, {ty:.2f}) {orientation:.2f}"
+            )
 
             # reset controller
             self.linear_pid.reset_controller()
@@ -329,7 +339,7 @@ class TableDockingServiceNode(Node):
                     return self.process_next_goal_and_result("canceled", message)
 
                 distance_delta, distance_variable, angle_delta, angle_variable = self.calculate_delta(tx, ty)
-                orientation_delta = math.atan2(math.sin(yaw - self.yaw), math.cos(yaw - self.yaw))
+                orientation_delta = math.atan2(math.sin(orientation - self.yaw), math.cos(orientation - self.yaw))
 
                 # check if distance is aligned
                 if not distance_aligned:
@@ -340,12 +350,12 @@ class TableDockingServiceNode(Node):
                         )
                         self.publish_velocity(linear, angular)
                     else:
-                        # move little further
-                        self.publish_velocity(0.25, 0.0)
-                        time.sleep(4)
-
                         # set flag to true when distance is aligned
                         distance_aligned = True
+
+                        # move little further
+                        self.publish_velocity(0.05, 0.0)
+                        time.sleep(4)
                 else:
                     # if distance is aligned, align angle
                     if not self.is_angle_aligned(orientation_delta):
@@ -434,7 +444,7 @@ class TableDockingServiceNode(Node):
 
     def is_angle_aligned(self, angle):
         # check if current delta angle less then tolerance
-        if angle < self.yaw_tolerance:
+        if abs(angle) < self.yaw_tolerance:
             # halt robot motion, return true
             self.get_logger().info(f"Orientation to target aligned with Δ {angle:.2f} rad.")
             self.publish_velocity(0.0, 0.0)
