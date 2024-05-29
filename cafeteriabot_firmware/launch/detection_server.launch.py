@@ -33,16 +33,18 @@ def generate_launch_description():
             Node(
                 package="cafeteriabot_firmware",
                 executable="laser_scan_filtering",
-                name="filtering01_node",
+                name="filtering_node",
                 output="screen",
                 remappings=[
                     ("/map", "/keepout_filter_mask"),
                 ],
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "f_ref": "map",
                         "t_ref": "robot_front_laser_base_link",
-                        "distance_threshold": 2.2,
+                        "min_distance": 0.2,
+                        "max_distance": 2.2,
                     }
                 ],
                 condition=IfCondition(LaunchConfiguration("use_sim_time")),
@@ -50,7 +52,7 @@ def generate_launch_description():
             Node(
                 package="cafeteriabot_firmware",
                 executable="laser_scan_filtering",
-                name="filtering01_node",
+                name="filtering_node",
                 output="screen",
                 remappings=[
                     ("/map", "/keepout_filter_mask"),
@@ -58,9 +60,11 @@ def generate_launch_description():
                 ],
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
-                        "distance_threshold": 2.2,
+                        "min_distance": 0.2,
+                        "max_distance": 2.0,
                     }
                 ],
                 condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
@@ -72,6 +76,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "f_ref": "map",
                         "t_ref": "robot_front_laser_base_link",
                         "publish_rate": 1.0,
@@ -90,12 +95,13 @@ def generate_launch_description():
                 output="screen",
                 parameters=[
                     {
+                        "use_sim_time": use_sim_time,
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
                         "publish_rate": 1.0,
                         "distance_threshold": 0.1,
-                        "min_points": 10,
-                        "max_points": 120,
+                        "min_points": 5,
+                        "max_points": 80,
                         "stale_duration": 1,
                     }
                 ],
@@ -104,15 +110,15 @@ def generate_launch_description():
             Node(
                 package="cafeteriabot_firmware",
                 executable="laser_scan_detection",
-                name="detection01_node",
+                name="detection_node",
                 output="screen",
                 parameters=[
                     {
                         "f_ref": "map",
                         "t_ref": "robot_front_laser_base_link",
                         "publish_rate": 1.0,
-                        "min_distance": 0.60,
-                        "max_distance": 0.80,
+                        "min_distance": 0.55,
+                        "max_distance": 0.75,
                         "angle_tolerance": 5,
                         "marker_duration": 5,
                         "stale_duration": 5,
@@ -123,15 +129,15 @@ def generate_launch_description():
             Node(
                 package="cafeteriabot_firmware",
                 executable="laser_scan_detection",
-                name="detection01_node",
+                name="detection_node",
                 output="screen",
                 parameters=[
                     {
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
                         "publish_rate": 1.0,
-                        "min_distance": 0.50,
-                        "max_distance": 0.75,
+                        "min_distance": 0.45,
+                        "max_distance": 0.65,
                         "angle_tolerance": 5,
                         "marker_duration": 5,
                         "stale_duration": 5,

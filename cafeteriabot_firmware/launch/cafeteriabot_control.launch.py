@@ -61,8 +61,8 @@ def generate_launch_description():
                         "distance_away": 0.5,
                         "step_size": 0.5,
                         "node_rate": 10.0,
-                        "goal_tolerance": 0.1,
-                        "yaw_tolerance": 0.1,
+                        "goal_tolerance": 0.05,
+                        "yaw_tolerance": 0.05,
                     }
                 ],
                 condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
