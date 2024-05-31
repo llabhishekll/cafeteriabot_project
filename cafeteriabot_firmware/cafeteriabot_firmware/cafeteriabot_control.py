@@ -57,7 +57,7 @@ class CafeteriaRobotControlNode(Node):
         self.retry_duration = self.declare_parameter("retry_duration", 5).value
         self.node_rate = self.declare_parameter("node_rate", 10.0).value
         self.marker_duration = self.declare_parameter("marker_duration", 0).value
-        self.cancel_duration = self.declare_parameter("marker_duration", 5).value
+        self.cancel_duration = self.declare_parameter("cancel_duration", 5).value
 
         # node modification
         self.waypoints_data = self.load_waypoints_yaml(self.yaml_filename)
