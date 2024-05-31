@@ -57,6 +57,7 @@ class CafeteriaRobotControlNode(Node):
         self.retry_duration = self.declare_parameter("retry_duration", 5).value
         self.node_rate = self.declare_parameter("node_rate", 10.0).value
         self.marker_duration = self.declare_parameter("marker_duration", 0).value
+        self.cancel_duration = self.declare_parameter("marker_duration", 5).value
 
         # node modification
         self.waypoints_data = self.load_waypoints_yaml(self.yaml_filename)
@@ -92,6 +93,7 @@ class CafeteriaRobotControlNode(Node):
         self.timer_transition = self.create_timer(
             1.0, self.manage_state_transition, callback_group=self.callback_g2
         )
+
         # parameter handler
         self.add_on_set_parameters_callback(self.on_parameter_changed)
 
@@ -265,8 +267,11 @@ class CafeteriaRobotControlNode(Node):
             next_waypoint = self.get_next_waypoint()
             self.navigator.goToPose(next_waypoint)
 
+            # update the submit_time timestamp to the current time
+            self.submit_time = self.get_clock().now()
+
             # sleep for few sec before looping
-            time.sleep(4)
+            time.sleep(2)
 
             while not self.navigator.isTaskComplete():
                 if self.evaluate_navigation_feedback():
@@ -319,8 +324,11 @@ class CafeteriaRobotControlNode(Node):
             next_waypoint = self.get_next_waypoint()
             self.navigator.goToPose(next_waypoint)
 
+            # update the submit_time timestamp to the current time
+            self.submit_time = self.get_clock().now()
+
             # sleep for few sec before looping
-            time.sleep(4)
+            time.sleep(2)
 
             while not self.navigator.isTaskComplete():
                 if self.evaluate_navigation_feedback():
@@ -419,10 +427,18 @@ class CafeteriaRobotControlNode(Node):
             return True
 
         # check if distance is within goal target
-        if feedback.distance_remaining < 0.125:
-            self.get_logger().info("Goal cancelled as distance within reach.")
-            self.navigator.cancelTask()
-            return True
+        distance = feedback.distance_remaining
+        seconds = feedback.navigation_time.sec + feedback.navigation_time.nanosec * 1e-9
+
+        # calculate the elapsed time since the last update
+        current_time = self.get_clock().now()
+        elapsed_submit_time = current_time - self.submit_time
+
+        if distance < 0.125:
+            if elapsed_submit_time.nanoseconds * 1e-9 > self.cancel_duration:
+                self.get_logger().info(f"Goal cancelled as distance within reach in {seconds:.2f} sec.")
+                self.navigator.cancelTask()
+                return True
         return False
 
     def check_cancel_event(self):

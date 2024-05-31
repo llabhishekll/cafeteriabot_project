@@ -114,6 +114,7 @@ def generate_launch_description():
                         "retry_duration": 5,
                         "node_rate": 10.0,
                         "marker_duration": 0,
+                        "cancel_duration": 5,
                     }
                 ],
                 condition=IfCondition(LaunchConfiguration("use_sim_time")),
@@ -137,6 +138,7 @@ def generate_launch_description():
                         "retry_duration": 5,
                         "node_rate": 10.0,
                         "marker_duration": 0,
+                        "cancel_duration": 5,
                     }
                 ],
                 condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
