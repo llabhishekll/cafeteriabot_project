@@ -36,32 +36,6 @@ def generate_launch_description():
             DeclareLaunchArgument(name="use_sim_time", default_value="True"),
             DeclareLaunchArgument(name="display_rviz", default_value="True"),
             Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                name="static_transform_publisher",
-                namespace="",
-                output="screen",
-                arguments=[
-                    "0", "0", "0", "0", "0", "0", "robot_base_link", "base_link"
-                ],
-                condition=IfCondition(LaunchConfiguration('use_sim_time')),
-            ),
-            Node(
-                package="tf2_ros",
-                executable="static_transform_publisher",
-                name="static_transform_publisher",
-                namespace="",
-                output="screen",
-                remappings=[
-                    ("/tf", "/cleaner_2/tf"),
-                    ("/tf_static", "/cleaner_2/tf_static"),
-                ],
-                arguments=[
-                    "0", "0", "0", "0", "0", "0", "cleaner_2/base_link", "base_link"
-                ],
-                condition=UnlessCondition(LaunchConfiguration('use_sim_time')),
-            ),
-            Node(
                 package="nav2_map_server",
                 executable="map_server",
                 name="map_server_node",
@@ -350,6 +324,33 @@ def generate_launch_description():
                         ],
                     ),
                 ],
+            ),
+            TimerAction(
+                period=12.0,
+                actions=[
+                    Node(
+                        package="tf2_ros",
+                        executable="static_transform_publisher",
+                        name="static_transform_publisher",
+                        namespace="",
+                        output="screen",
+                        arguments=[
+                            "0", "0", "0", "0", "0", "0", "robot_base_link", "base_link"
+                        ],
+                        condition=IfCondition(LaunchConfiguration('use_sim_time')),
+                    ),
+                    Node(
+                        package="tf2_ros",
+                        executable="static_transform_publisher",
+                        name="static_transform_publisher",
+                        namespace="",
+                        output="screen",
+                        arguments=[
+                            "0", "0", "0", "0", "0", "0", "cleaner_2/base_link", "base_link"
+                        ],
+                        condition=UnlessCondition(LaunchConfiguration('use_sim_time')),
+                    ),
+                ]
             ),
             Node(
                 package="rviz2",
