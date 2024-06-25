@@ -545,7 +545,7 @@ class TableDockingServiceNode(Node):
             for step in range(steps + 1):
                 pose = PoseStamped()
                 pose.header = path.header
-                ratio = step / float(steps)
+                ratio = step / float(steps) if steps else 0.0
                 pose.pose.position.x = start_point[0] + ratio * dx
                 pose.pose.position.y = start_point[1] + ratio * dy
                 path.poses.append(pose)
