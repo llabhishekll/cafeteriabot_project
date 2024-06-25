@@ -76,7 +76,7 @@ def generate_launch_description():
                     {
                         "use_sim_time": use_sim_time,
                         "robot_radius": 0.22,
-                        "table_radius": 0.35
+                        "table_radius": 0.35,
                     }
                 ],
                 condition=IfCondition(LaunchConfiguration("use_sim_time")),
@@ -89,8 +89,8 @@ def generate_launch_description():
                 parameters=[
                     {
                         "use_sim_time": use_sim_time,
-                        "robot_radius": 0.22,
-                        "table_radius": 0.35
+                        "robot_radius": 0.14,
+                        "table_radius": 0.28,
                     }
                 ],
                 condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
@@ -138,7 +138,7 @@ def generate_launch_description():
                         "retry_duration": 5,
                         "node_rate": 10.0,
                         "marker_duration": 0,
-                        "cancel_duration": 5,
+                        "cancel_duration": 2,
                     }
                 ],
                 condition=UnlessCondition(LaunchConfiguration("use_sim_time")),

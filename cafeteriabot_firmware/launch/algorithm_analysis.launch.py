@@ -121,7 +121,7 @@ def generate_launch_description():
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
                         "marker_duration": 5,
-                        "min_distance": 0.2,
+                        "min_distance": 0.28,
                         "max_distance": 2.2,
                     }
                 ],
@@ -160,7 +160,7 @@ def generate_launch_description():
                         "use_sim_time": use_sim_time,
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
-                        "min_distance": 0.2,
+                        "min_distance": 0.28,
                         "max_distance": 2.2,
                     }
                 ],
@@ -178,8 +178,8 @@ def generate_launch_description():
                         "f_ref": "map",
                         "t_ref": "robot_front_laser_base_link",
                         "distance_threshold": 0.1,
-                        "min_points": 10,
-                        "max_points": 120,
+                        "min_points": 1,
+                        "max_points": 150,
                         "marker_duration": 5,
                     }
                 ],
@@ -197,8 +197,8 @@ def generate_launch_description():
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
                         "distance_threshold": 0.1,
-                        "min_points": 5,
-                        "max_points": 80,
+                        "min_points": 1,
+                        "max_points": 150,
                         "marker_duration": 5,
                     }
                 ],

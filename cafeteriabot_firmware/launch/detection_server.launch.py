@@ -63,8 +63,8 @@ def generate_launch_description():
                         "use_sim_time": use_sim_time,
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
-                        "min_distance": 0.2,
-                        "max_distance": 2.0,
+                        "min_distance": 0.28,
+                        "max_distance": 2.2,
                     }
                 ],
                 condition=UnlessCondition(LaunchConfiguration("use_sim_time")),
@@ -98,10 +98,10 @@ def generate_launch_description():
                         "use_sim_time": use_sim_time,
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
-                        "publish_rate": 1.0,
+                        "publish_rate": 0.5,
                         "distance_threshold": 0.1,
                         "min_points": 2,
-                        "max_points": 150,
+                        "max_points": 50,
                         "stale_duration": 1,
                     }
                 ],
@@ -135,7 +135,7 @@ def generate_launch_description():
                     {
                         "f_ref": "map",
                         "t_ref": "cleaner_2/laser_sensor_link",
-                        "publish_rate": 1.0,
+                        "publish_rate": 0.5,
                         "min_distance": 0.42,
                         "max_distance": 0.65,
                         "angle_tolerance": 5,
