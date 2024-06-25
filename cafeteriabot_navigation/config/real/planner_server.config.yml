@@ -1,6 +1,6 @@
 planner_server_node:
   ros__parameters:
-    expected_planner_frequency: 1.0
+    expected_planner_frequency: 5.0
     use_sim_time: False
     planner_plugins: ["GridBased"]
 
@@ -52,8 +52,8 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         enabled: True
-        inflation_radius: 0.25
-        cost_scaling_factor: 2.0
+        inflation_radius: 0.40
+        cost_scaling_factor: 4.0
         inflate_unknown: False
         inflate_around_unknown: True
       
