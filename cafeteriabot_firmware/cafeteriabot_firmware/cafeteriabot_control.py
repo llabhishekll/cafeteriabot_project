@@ -179,19 +179,20 @@ class CafeteriaRobotControlNode(Node):
 
         elif command == "dock":
             # set the next state, and indicate a transition
+            self.current_state = "state_patrol"
             self.request_transition("state_dock")
 
             # service response
             success = True
-            message = "Action goal sent."
+            message = "Moving to `Drop` from current location."
 
-        elif command == "cancel":
+        elif command == "undock":
             # set the next state, and indicate a transition
-            self.cancel_event.set()
+            self.request_transition("state_undock")
 
             # service response
             success = True
-            message = "Action goal canceled."
+            message = "Moving to `Home` from current location."
 
         elif command == "stop":
             # set the next state, and indicate a transition
@@ -200,6 +201,22 @@ class CafeteriaRobotControlNode(Node):
             # service response
             success = True
             message = "Robot stopped: All waypoints cleared."
+
+        elif command == "action_dock":
+            # set the next state, and indicate a transition
+            self.request_transition("state_dock")
+
+            # service response
+            success = True
+            message = "Action goal sent."
+
+        elif command == "action_cancel":
+            # set the next state, and indicate a transition
+            self.cancel_event.set()
+
+            # service response
+            success = True
+            message = "Action goal canceled."
 
         else:
             # command is not recognized; set the response accordingly
@@ -253,7 +270,7 @@ class CafeteriaRobotControlNode(Node):
         # set the next state, and indicate no transition
         self.next_state = None
         self.previous_state = None
-        self.current_state = None
+        self.current_state = "state_ideal"
         self.transition_requested = False
 
     def state_patrol(self):
@@ -288,11 +305,22 @@ class CafeteriaRobotControlNode(Node):
                 # sleep for few sec before rechecking
                 time.sleep(1)
 
+            if not self.use_sim_time:
+                # sleep for few sec before next goal
+                time.sleep(5)
+
+                # check if table has been found
+                if self.process_table_availability():
+                    return
+
     def state_dock(self):
         self.get_logger().info("State 'DOCK': Docking robot to table.")
 
         # move robot under table
         if not self.move_robot_under(True):
+            return self.request_transition("state_halt")
+
+        if self.previous_state == "state_ideal":
             return self.request_transition("state_halt")
 
         if not self.control_elevator(True):
