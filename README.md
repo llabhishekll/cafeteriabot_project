@@ -2,7 +2,7 @@
 
 The final goal of the project is to set up an automatic system that allows for a trash table in cafeteria to be found and picked up by a robot called `cleaner` and taken to a back room, where it will be emptied.
 
-![main](.assets/main.png)
+![real-3](.assets/real-3.gif)
 
 ![ros](https://img.shields.io/badge/ROS2-humble-red) ![cpp](https://img.shields.io/badge/cpp-11+-blue) ![cpp](https://img.shields.io/badge/python-3.8+-blue)
 
@@ -361,18 +361,7 @@ The external point is point on map outside table, based on robot current positio
 
 <img src=".assets/external-combo.jpg" alt="external-combo" style="zoom:20%;" />
 
-## Roadmap
-
-- [x] Task 1 : Set up the Nav2 system in order to control the robot.
-- [x] Task 2 : Develop a system to detect the trash table based on the table's legs separation.
-- [x] Task 3 : Implement a control mechanism for the robot to navigate underneath the table and pick up the table.
-- [x] Task 4 : Design a system to command the robot to drop and reverse out from under the trash table.
-- [x] Task 5 : Develop a web application to control the entire process and containerize the project.
-- [x] Task 6 : Create comprehensive documentation for the project.
-
 ## Known Issue
-
-See the [open issues](https://github.com/llabhishekll/cafeteriabot_project/issues) for a full list of proposed features (and known issues).
 
 #### Localization (AMCL)
 
@@ -385,6 +374,17 @@ The Adaptive Monte Carlo Localization (AMCL) algorithm is widely used in robotic
 When a table is placed near a wall, the detection system might only identify part of the table legs instead of the complete table. While this partial detection does not impact performance, it reduces the number of options available for the robot to align with the table centroid.
 
 ![edge-case](.assets/edge-case.png)
+
+## Roadmap
+
+- [x] Task 1 : Set up the Nav2 system in order to control the robot.
+- [x] Task 2 : Develop a system to detect the trash table based on the table's legs separation.
+- [x] Task 3 : Implement a control mechanism for the robot to navigate underneath the table and pick up the table.
+- [x] Task 4 : Design a system to command the robot to drop and reverse out from under the trash table.
+- [x] Task 5 : Develop a web application to control the entire process and containerize the project.
+- [x] Task 6 : Create comprehensive documentation for the project.
+
+See the [open issues](https://github.com/llabhishekll/cafeteriabot_project/issues) for a full list of proposed features (and known issues).
 
 ## Tools
 
